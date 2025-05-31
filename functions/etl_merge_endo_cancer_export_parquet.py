@@ -6,6 +6,9 @@ A dataframe with the target (Cancer/EMS/Normal) is saved as parquet.
 Source data tar files need to be saved in the following locations:
     - data/raw/cancer/GSE184880_RAW.tar 
     - data/raw/endo/GSE214411_RAW.tar
+    
+The processed files get stored in a folder with this format: data/processed/{timestamp}
+Rename before use
 """
 
 # Import libraries
@@ -178,7 +181,7 @@ df_X_with_obs = merged_adata.to_df().join(merged_adata.obs) # merge cell data wi
 
 df_X_with_obs['cell_label'] = df_X_with_obs.index
 
-df_X_with_obs.reset_index()
+df_X_with_obs.reset_index(inplace=True)
 
 df_X_with_obs["target"] = (
     df_X_with_obs["sample"]
