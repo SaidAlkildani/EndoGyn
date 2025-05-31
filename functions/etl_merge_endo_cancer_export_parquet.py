@@ -182,6 +182,7 @@ df_X_with_obs = merged_adata.to_df().join(merged_adata.obs) # merge cell data wi
 df_X_with_obs['cell_label'] = df_X_with_obs.index
 
 df_X_with_obs.reset_index(inplace=True)
+df_X_with_obs.drop('index', axis=1, inplace=True)
 
 df_X_with_obs["target"] = (
     df_X_with_obs["sample"]
