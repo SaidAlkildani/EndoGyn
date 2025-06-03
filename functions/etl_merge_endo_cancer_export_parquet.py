@@ -24,8 +24,17 @@ print(os.path.join(os.path.dirname(__file__), ".."))
 
 project_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
 
+# Create folders for processed data
+
+processed_data_path = os.path.normpath(os.path.join(project_dir, "data", "processed", "v1_not_integrated"))
+os.makedirs(processed_data_path, exist_ok=False) # exist_ok = false prevents overwriting existing data folder
+
+
+# Source folders
+
 dir_endo    = os.path.join(project_dir, "data", "raw", "endo") # path for directory containing endometriosis data .tar file.
 dir_cancer  = os.path.join(project_dir, "data", "raw", "cancer") # path for directory containing cancer data .tar file.
+
 
 ## Endometriosis Data
 # Extract files to a directory
@@ -60,6 +69,8 @@ for prefix in prefixes:
     )
     adata.obs["sample"] = prefix.rstrip("_")
     adatas.append(adata)
+    adatas.obs_names_make_unique()
+
     
 # Delete extracted files
 shutil.rmtree(data_dir)
@@ -170,10 +181,6 @@ merged_adata = ad.concat(
     fill_value=0,  # Fill missing values wth zeros
 )
 
-timestamp_for_filename = time.strftime("%Y-%m-%d_%H%M%S")
-
-processed_data_path = os.path.join(project_dir, "data", "processed", timestamp_for_filename)
-os.mkdir(processed_data_path)
 
 ad.AnnData.write_h5ad(merged_adata, filename=os.path.join(processed_data_path, "anndata.h5ad"), compression='gzip')
 
