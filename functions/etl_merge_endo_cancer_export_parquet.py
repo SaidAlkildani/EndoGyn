@@ -69,8 +69,6 @@ for prefix in prefixes:
     )
     adata.obs["sample"] = prefix.rstrip("_")
     adatas.append(adata)
-    adatas.obs_names_make_unique()
-
     
 # Delete extracted files
 shutil.rmtree(data_dir)
