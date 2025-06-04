@@ -19,6 +19,9 @@ import time
 
 import scanpy as sc
 import anndata as ad
+import scvi
+
+from sklearn.model_selection import train_test_split
 
 print(os.path.join(os.path.dirname(__file__), ".."))
 
@@ -75,7 +78,7 @@ shutil.rmtree(data_dir)
 
 # Concatenate all Objects inside adatas into one
 adata_endo = ad.concat(
-    adatas, label="batch", keys=[p.rstrip("_") for p in prefixes]
+    adatas, label="batch", index_unique="-", keys=[p.rstrip("_") for p in prefixes]
 )
 
 # Basic filtering: number of genes/cell and number of cells/samples
@@ -149,7 +152,7 @@ shutil.rmtree(data_dir)
 
 # Concatenate all Objects inside adatas into one
 adata_cancer = ad.concat(
-    adatas, label="batch", keys=[p.rstrip("_") for p in prefixes]
+    adatas, label="batch", index_unique="-", keys=[p.rstrip("_") for p in prefixes]
 )
 
 # Basic filtering: number of genes/cell and number of cells/samples
@@ -172,46 +175,105 @@ adata_cancer = adata_cancer[
 merged_adata = ad.concat(
     [adata_endo, adata_cancer],
     axis=0,  # Concatenate along cells
-    join="inner",  # Keep intersected genes only
+    join="outer",  # Keep all genes only
     keys=["Endometriosis", "Cancer"],
     merge="unique",  # Handle overlapping metadata uniquely
     index_unique="-",  # Avoid duplicate observation names
     fill_value=0,  # Fill missing values wth zeros
 )
 
+# Assign datasets as a column
+merged_adata.obs['dataset'] = merged_adata.obs.index.str.split('-').str[-1]
 
-ad.AnnData.write_h5ad(merged_adata, filename=os.path.join(processed_data_path, "anndata.h5ad"), compression='gzip')
-
-df_X_with_obs = merged_adata.to_df().join(merged_adata.obs) # merge cell data with metadata
-
-df_X_with_obs['cell_label'] = df_X_with_obs.index
-
-df_X_with_obs.reset_index(inplace=True)
-df_X_with_obs.drop('index', axis=1, inplace=True)
-
-df_X_with_obs["target"] = (
-    df_X_with_obs["sample"]
-    .apply(lambda x: (x.split("_")[-1])[0]) # split "sample" column and get the last part containing Cancer1, EMS, N-5 Norm2, etc.... [0] gets the first letter C, E, N
+# Create target variable in obs
+merged_adata.obs["target"] = (
+    merged_adata.obs["sample"]
+    .str.split("_").str[-1]
+    .str[0]
     .map({"C": "Cancer", "E": "EMS", "N": "Normal"})
 )
 
-set(df_X_with_obs.target)
+# Stratified split preserving target distribution
+train_idx, test_idx = train_test_split(
+    merged_adata.obs.index,
+    test_size=0.2,
+    stratify=merged_adata.obs["target"],
+    random_state=42
+)
 
-df_X_with_obs.to_parquet(os.path.join(processed_data_path, "df_X_with_obs.parquet"))
+adata_train = merged_adata[train_idx].copy()
+adata_test = merged_adata[test_idx].copy()
 
-columns_to_drop = [
-    "cell_label",
-    "sample",
-    "batch",
-    "n_genes",
-    "n_genes_by_counts",
-    "total_counts",
-    "total_counts_mt",
-    "pct_counts_mt",
-]
+adata_train.layers["counts"] = adata_train.X
+adata_test.layers["counts"] = adata_test.X
 
-df_X_with_target = df_X_with_obs.loc[
-        :, ~df_X_with_obs.columns.isin(columns_to_drop)
-        ].copy()
+## Integrate to regress technical variations
 
-df_X_with_target.to_parquet(os.path.join(processed_data_path, "df_X_with_target.parquet"))
+# Setup model and train
+scvi.model.SCVI.setup_anndata(adata_train, layer="counts", 
+                              categorical_covariate_keys= ["sample", "dataset"], # choosing sample as a covariate as we saw in the example above sample-to-sample technical variance
+                              continuous_covariate_keys= ["pct_counts_mt", "total_counts"])
+# Fit on train set only
+model = scvi.model.SCVI(adata_train, n_layers=2, n_latent=30, gene_likelihood="nb")
+model.train(accelerator="gpu") 
+
+# Get normalized counts for both sets (prevents data leakage)
+norm_train = model.get_normalized_expression(
+    adata_train, 
+    library_size=1e4,
+    return_numpy=False
+)
+norm_test = model.get_normalized_expression(
+    adata_test,
+    library_size=1e4, 
+    return_numpy=False
+)
+
+# Create DataFrames with targets
+norm_train_df = norm_train.join(adata_train.obs["target"])
+norm_test_df = norm_test.join(adata_test.obs["target"])
+
+# Save normalized datasets
+norm_train_df.to_parquet(os.path.join(processed_data_path, "scvi_normalized_train.parquet"))
+norm_test_df.to_parquet(os.path.join(processed_data_path, "scvi_normalized_test.parquet"))
+
+# Insert integrated data to Anndata
+#latent = model.get_latent_representation()
+#merged_adata.obsm["X_scVI"] = latent
+
+# Save Anndata in case of visualisation ## cannot generally save since the latent space has different dimensions.
+#ad.AnnData.write_h5ad(merged_adata, filename=os.path.join(processed_data_path, "anndata.h5ad"), compression='gzip')
+
+#df_X_with_obs = merged_adata.to_df().join(merged_adata.obs) # merge cell data with metadata
+
+#df_X_with_obs['cell_label'] = df_X_with_obs.index
+
+#df_X_with_obs.reset_index(inplace=True)
+#df_X_with_obs.drop('index', axis=1, inplace=True)
+
+#df_X_with_obs["target"] = (
+    #df_X_with_obs["sample"]
+    #.apply(lambda x: (x.split("_")[-1])[0]) # split "sample" column and get the last part containing Cancer1, EMS, N-5 Norm2, etc.... [0] gets the first letter C, E, N
+    #.map({"C": "Cancer", "E": "EMS", "N": "Normal"})
+#)
+
+#set(df_X_with_obs.target)
+
+#df_X_with_obs.to_parquet(os.path.join(processed_data_path, "df_X_with_obs.parquet"))
+
+#columns_to_drop = [
+    #"cell_label",
+    #"sample",
+    #"batch",
+    #"n_genes",
+    #"n_genes_by_counts",
+    #"total_counts",
+    #"total_counts_mt",
+    #"pct_counts_mt",
+#]
+
+#df_X_with_target = df_X_with_obs.loc[
+        #:, ~df_X_with_obs.columns.isin(columns_to_drop)
+        #].copy()
+
+#df_X_with_target.to_parquet(os.path.join(processed_data_path, "df_X_with_target.parquet"))
