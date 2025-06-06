@@ -1,0 +1,12 @@
+packaging
+jupyterlab
+matplotlib
+numpy
+pandas
+seaborn
+scikit-learn
+statsmodels
+pytest
+testbook
+mlflow==2.22.0
+parsenvy

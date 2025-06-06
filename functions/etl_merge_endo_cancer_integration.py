@@ -1,3 +1,5 @@
+use_gpu = True # whether to use GPU acceleration for the SCVI data integration
+
 """
 Merges the data of endometriosis and cancer datasets, saves merged data as AnnData.
 A dataframe with the target (Cancer/EMS/Normal) along with gene counts/metadata is saved as parquet.
@@ -213,7 +215,9 @@ scvi.model.SCVI.setup_anndata(adata_train, layer="counts",
                               continuous_covariate_keys= ["pct_counts_mt", "total_counts"])
 # Fit on train set only
 model = scvi.model.SCVI(adata_train, n_layers=2, n_latent=30, gene_likelihood="nb")
-model.train(accelerator="gpu") 
+if use_gpu == True:
+    model.train(accelerator="gpu") 
+else: model.train() 
 
 # Get normalized counts for both sets (prevents data leakage)
 norm_train = model.get_normalized_expression(
@@ -255,37 +259,37 @@ adata_integrated = ad.concat(
 ad.AnnData.write_h5ad(adata_integrated, filename=os.path.join(processed_data_path, "anndata_integrated.h5ad"), compression='gzip')
 
 """
-#df_X_with_obs = merged_adata.to_df().join(merged_adata.obs) # merge cell data with metadata
+df_X_with_obs = merged_adata.to_df().join(merged_adata.obs) # merge cell data with metadata
 
-#df_X_with_obs['cell_label'] = df_X_with_obs.index
+df_X_with_obs['cell_label'] = df_X_with_obs.index
 
-#df_X_with_obs.reset_index(inplace=True)
-#df_X_with_obs.drop('index', axis=1, inplace=True)
+df_X_with_obs.reset_index(inplace=True)
+df_X_with_obs.drop('index', axis=1, inplace=True)
 
-#df_X_with_obs["target"] = (
-    #df_X_with_obs["sample"]
-    #.apply(lambda x: (x.split("_")[-1])[0]) # split "sample" column and get the last part containing Cancer1, EMS, N-5 Norm2, etc.... [0] gets the first letter C, E, N
-    #.map({"C": "Cancer", "E": "EMS", "N": "Normal"})
-#)
+df_X_with_obs["target"] = (
+    df_X_with_obs["sample"]
+    .apply(lambda x: (x.split("_")[-1])[0]) # split "sample" column and get the last part containing Cancer1, EMS, N-5 Norm2, etc.... [0] gets the first letter C, E, N
+    .map({"C": "Cancer", "E": "EMS", "N": "Normal"})
+)
 
-#set(df_X_with_obs.target)
+set(df_X_with_obs.target)
 
-#df_X_with_obs.to_parquet(os.path.join(processed_data_path, "df_X_with_obs.parquet"))
+df_X_with_obs.to_parquet(os.path.join(processed_data_path, "df_X_with_obs.parquet"))
 
-#columns_to_drop = [
-    #"cell_label",
-    #"sample",
-    #"batch",
-    #"n_genes",
-    #"n_genes_by_counts",
-    #"total_counts",
-    #"total_counts_mt",
-    #"pct_counts_mt",
-#]
+columns_to_drop = [
+    "cell_label",
+    "sample",
+    "batch",
+    "n_genes",
+    "n_genes_by_counts",
+    "total_counts",
+    "total_counts_mt",
+    "pct_counts_mt",
+]
 
-#df_X_with_target = df_X_with_obs.loc[
-        #:, ~df_X_with_obs.columns.isin(columns_to_drop)
-        #].copy()
+df_X_with_target = df_X_with_obs.loc[
+        :, ~df_X_with_obs.columns.isin(columns_to_drop)
+        ].copy()
 
-#df_X_with_target.to_parquet(os.path.join(processed_data_path, "df_X_with_target.parquet"))
+df_X_with_target.to_parquet(os.path.join(processed_data_path, "df_X_with_target.parquet"))
 """
