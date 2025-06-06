@@ -25,12 +25,23 @@ import scvi
 
 from sklearn.model_selection import train_test_split
 
+# Define function for extracting highly variable features 
+def reduce_features(adata):
+    # Normalize
+    sc.pp.normalize_total(adata, target_sum=1e4)
+    # Logarithmize
+    sc.pp.log1p(adata)
+    # Identify highly variable genes
+    sc.pp.highly_variable_genes(adata, min_mean=0.0125, max_mean=3, min_disp=0.5)
+    adata = adata[:, adata.var.highly_variable]
+    return adata
+
 print(os.path.join(os.path.dirname(__file__), ".."))
 
 project_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
 
 # Create folders for processed data
-processed_data_path = os.path.normpath(os.path.join(project_dir, "data", "processed", "v1_integrated"))
+processed_data_path = os.path.normpath(os.path.join(project_dir, "data", "processed", "v2_integrated"))
 os.makedirs(processed_data_path, exist_ok=False) # exist_ok = false prevents overwriting existing data folder
 
 
@@ -171,11 +182,15 @@ adata_cancer = adata_cancer[
     adata_cancer.obs.pct_counts_mt < 20, :
 ].copy()  # to remove cells with high mitochondrial activity
 
+# Highly variable genes
+adata_cancer = reduce_features(adata_cancer)
+adata_endo = reduce_features(adata_endo)
+
 ## Merge the two datasets
 adata_merged = ad.concat(
     [adata_endo, adata_cancer],
     axis=0,  # Concatenate along cells
-    join="inner",  # Keep all genes only
+    join="inner",  # Keep intersected genes only
     keys=["Endometriosis", "Cancer"],
     merge="unique",  # Handle overlapping metadata uniquely
     index_unique="-",  # Avoid duplicate observation names
