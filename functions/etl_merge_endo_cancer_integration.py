@@ -1,7 +1,7 @@
 use_gpu = False  # whether to use GPU acceleration for the SCVI data integration
 version = "v3"
 """
-Merges the data of cancermetriosis and cancer datasets, saves merged data as AnnData.
+Merges the data of endometriosis and cancer datasets, saves merged data as AnnData.
 A dataframe with the target (Cancer/EMS/Normal) along with gene counts/metadata is saved as parquet.
 A dataframe with the target (Cancer/EMS/Normal) is saved as parquet.
 
