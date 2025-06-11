@@ -1,5 +1,5 @@
-use_gpu = True # whether to use GPU acceleration for the SCVI data integration
-
+use_gpu = False  # whether to use GPU acceleration for the SCVI data integration
+version = "v3"
 """
 Merges the data of endometriosis and cancer datasets, saves merged data as AnnData.
 A dataframe with the target (Cancer/EMS/Normal) along with gene counts/metadata is saved as parquet.
@@ -16,7 +16,7 @@ Rename file in line 31 before running code
 # Import libraries
 import os
 import tarfile
-import shutil 
+import shutil
 import time
 
 import scanpy as sc
@@ -25,7 +25,8 @@ import scvi
 
 from sklearn.model_selection import train_test_split
 
-# Define function for extracting highly variable features 
+
+# Define function for extracting highly variable features
 def reduce_features(adata):
     # Normalize
     sc.pp.normalize_total(adata, target_sum=1e4)
@@ -36,25 +37,33 @@ def reduce_features(adata):
     adata = adata[:, adata.var.highly_variable]
     return adata
 
+
 print(os.path.join(os.path.dirname(__file__), ".."))
 
 project_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
 
 # Create folders for processed data
-processed_data_path = os.path.normpath(os.path.join(project_dir, "data", "processed", "v2_integrated"))
-os.makedirs(processed_data_path, exist_ok=False) # exist_ok = false prevents overwriting existing data folder
+processed_data_path = os.path.normpath(
+    os.path.join(project_dir, "data", "processed", version)
+)
+os.makedirs(
+    processed_data_path, exist_ok=False
+)  # exist_ok = false prevents overwriting existing data folder
 
 
 # Source folders
-dir_endo    = os.path.join(project_dir, "data", "raw", "endo") # path for directory containing endometriosis data .tar file.
-dir_cancer  = os.path.join(project_dir, "data", "raw", "cancer") # path for directory containing cancer data .tar file.
+dir_endo = os.path.join(
+    project_dir, "data", "raw", "endo"
+)  # path for directory containing endometriosis data .tar file.
+dir_cancer = os.path.join(
+    project_dir, "data", "raw", "cancer"
+)  # path for directory containing cancer data .tar file.
 
 
 ## Endometriosis Data
 # Extract files to a directory
 data_dir = os.path.join(dir_endo, "temp")
-with tarfile.open(os.path.join(dir_endo, "GSE214411_RAW.tar"), "r") as tar:
-    tar.extractall(path=data_dir)
+tar = tarfile.open(os.path.join(dir_endo, "GSE214411_RAW.tar"), "r")
 # List all prefixes (one per sample)
 prefixes = [
     "GSM6605431_EMS1_",
@@ -74,6 +83,15 @@ prefixes = [
 
 adatas = []
 for prefix in prefixes:
+    tar.extractall(
+        members=[
+            prefix + "matrix.mtx.gz",
+            prefix + "barcodes.tsv.gz",
+            prefix + "features.tsv.gz",
+        ],
+        path=data_dir,
+    )
+
     adata = sc.read_10x_mtx(
         data_dir,
         prefix=prefix,
@@ -83,9 +101,9 @@ for prefix in prefixes:
     )
     adata.obs["sample"] = prefix.rstrip("_")
     adatas.append(adata)
-    
-# Delete extracted files
-shutil.rmtree(data_dir)
+
+    # Delete extracted files
+    shutil.rmtree(data_dir)
 
 # Concatenate all Objects inside adatas into one
 adata_endo = ad.concat(
@@ -113,8 +131,8 @@ adata_endo = adata_endo[
 # Extract files to a directory
 
 data_dir = os.path.join(dir_cancer, "temp")
-with tarfile.open(os.path.join(dir_cancer, "GSE184880_RAW.tar"), "r") as tar:
-    tar.extractall(path=data_dir)
+tar = tarfile.open(os.path.join(dir_cancer, "GSE184880_RAW.tar"), "r")
+
 # List all prefixes (one per sample)
 prefixes = [
     "GSM5599220_Norm1",
@@ -133,6 +151,16 @@ prefixes = [
 
 adatas = []
 for prefix in prefixes:
+
+    tar.extractall(
+        members=[
+            prefix + ".matrix.mtx.gz",
+            prefix + ".barcodes.tsv.gz",
+            prefix + ".genes.tsv.gz",
+        ],
+        path=data_dir,
+    )
+
     # Rename files to match Scanpy's expectations
 
     os.rename(
@@ -147,7 +175,9 @@ for prefix in prefixes:
         os.path.join(data_dir, f"{prefix}.genes.tsv.gz"),
         os.path.join(data_dir, f"{prefix}_features.tsv.gz"),
     )
+  
     prefix = prefix + "_"  # add underscore
+
     adata = sc.read_10x_mtx(
         data_dir,
         prefix=prefix,
@@ -157,9 +187,9 @@ for prefix in prefixes:
     )
     adata.obs["sample"] = prefix.rstrip("_")
     adatas.append(adata)
-        
-# Delete extracted files
-shutil.rmtree(data_dir)
+
+    # Delete extracted files
+    shutil.rmtree(data_dir)
 
 # Concatenate all Objects inside adatas into one
 adata_cancer = ad.concat(
@@ -198,12 +228,13 @@ adata_merged = ad.concat(
 )
 
 # Assign datasets as a column
-adata_merged.obs['dataset'] = adata_merged.obs.index.str.split('-').str[-1]
+adata_merged.obs["dataset"] = adata_merged.obs.index.str.split("-").str[-1]
 
 # Create target variable in obs
 adata_merged.obs["target"] = (
     adata_merged.obs["sample"]
-    .str.split("_").str[-1]
+    .str.split("_")
+    .str[-1]
     .str[0]
     .map({"C": "Cancer", "E": "EMS", "N": "Normal"})
 )
@@ -212,8 +243,8 @@ adata_merged.obs["target"] = (
 train_idx, test_idx = train_test_split(
     adata_merged.obs.index,
     test_size=0.2,
-    stratify=adata_merged.obs["target"], #Should we stratify with dataset too?
-    random_state=42
+    stratify=adata_merged.obs["target"],  # Should we stratify with dataset too?
+    random_state=42,
 )
 
 adata_train = adata_merged[train_idx].copy()
@@ -225,25 +256,28 @@ adata_test.layers["counts"] = adata_test.X
 ## Integrate to regress technical variations
 
 # Setup model and train
-scvi.model.SCVI.setup_anndata(adata_train, layer="counts", 
-                              categorical_covariate_keys= ["sample", "dataset"], # choosing sample as a covariate as we saw in the example above sample-to-sample technical variance
-                              continuous_covariate_keys= ["pct_counts_mt", "total_counts"])
+scvi.model.SCVI.setup_anndata(
+    adata_train,
+    layer="counts",
+    categorical_covariate_keys=[
+        "sample",
+        "dataset",
+    ],  # choosing sample as a covariate as we saw in the example above sample-to-sample technical variance
+    continuous_covariate_keys=["pct_counts_mt", "total_counts"],
+)
 # Fit on train set only
 model = scvi.model.SCVI(adata_train, n_layers=2, n_latent=30, gene_likelihood="nb")
 if use_gpu == True:
-    model.train(accelerator="gpu") 
-else: model.train() 
+    model.train(accelerator="gpu")
+else:
+    model.train()
 
 # Get normalized counts for both sets (prevents data leakage)
 norm_train = model.get_normalized_expression(
-    adata_train, 
-    library_size=1e4,
-    return_numpy=False
+    adata_train, library_size=1e4, return_numpy=False
 )
 norm_test = model.get_normalized_expression(
-    adata_test,
-    library_size=1e4, 
-    return_numpy=False
+    adata_test, library_size=1e4, return_numpy=False
 )
 
 # Create DataFrames with targets
@@ -251,8 +285,12 @@ norm_train_df = norm_train.join(adata_train.obs["target"])
 norm_test_df = norm_test.join(adata_test.obs["target"])
 
 # Save normalized datasets
-norm_train_df.to_parquet(os.path.join(processed_data_path, "scvi_normalized_train.parquet"))
-norm_test_df.to_parquet(os.path.join(processed_data_path, "scvi_normalized_test.parquet"))
+norm_train_df.to_parquet(
+    os.path.join(processed_data_path, "scvi_normalized_train.parquet")
+)
+norm_test_df.to_parquet(
+    os.path.join(processed_data_path, "scvi_normalized_test.parquet")
+)
 
 # Insert integrated data to Anndata
 latent_train = model.get_latent_representation()
@@ -261,50 +299,18 @@ adata_train.obsm["X_scVI"] = latent_train
 latent_test = model.get_latent_representation()
 adata_train.obsm["X_scVI"] = latent_test
 
-# Merge data again 
+# Merge data again
 adata_integrated = ad.concat(
     [adata_train, adata_test],
-    axis=0,          # Concatenate along cells 
-    join="outer",    # Keep all genes only
+    axis=0,  # Concatenate along cells
+    join="outer",  # Keep all genes only
     merge="unique",  # Handle overlapping metadata uniquely
-    fill_value=0     # Fill missing values wth zeros
+    fill_value=0,  # Fill missing values wth zeros
 )
 
 # Save Anndata in case of visualisation ## cannot generally save since the latent space has different dimensions.
-ad.AnnData.write_h5ad(adata_integrated, filename=os.path.join(processed_data_path, "anndata_integrated.h5ad"), compression='gzip')
-
-"""
-df_X_with_obs = merged_adata.to_df().join(merged_adata.obs) # merge cell data with metadata
-
-df_X_with_obs['cell_label'] = df_X_with_obs.index
-
-df_X_with_obs.reset_index(inplace=True)
-df_X_with_obs.drop('index', axis=1, inplace=True)
-
-df_X_with_obs["target"] = (
-    df_X_with_obs["sample"]
-    .apply(lambda x: (x.split("_")[-1])[0]) # split "sample" column and get the last part containing Cancer1, EMS, N-5 Norm2, etc.... [0] gets the first letter C, E, N
-    .map({"C": "Cancer", "E": "EMS", "N": "Normal"})
+ad.AnnData.write_h5ad(
+    adata_integrated,
+    filename=os.path.join(processed_data_path, "anndata_integrated.h5ad"),
+    compression="gzip",
 )
-
-set(df_X_with_obs.target)
-
-df_X_with_obs.to_parquet(os.path.join(processed_data_path, "df_X_with_obs.parquet"))
-
-columns_to_drop = [
-    "cell_label",
-    "sample",
-    "batch",
-    "n_genes",
-    "n_genes_by_counts",
-    "total_counts",
-    "total_counts_mt",
-    "pct_counts_mt",
-]
-
-df_X_with_target = df_X_with_obs.loc[
-        :, ~df_X_with_obs.columns.isin(columns_to_drop)
-        ].copy()
-
-df_X_with_target.to_parquet(os.path.join(processed_data_path, "df_X_with_target.parquet"))
-"""
