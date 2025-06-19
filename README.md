@@ -1,12 +1,15 @@
 # EndoGyn
 
+![Endogyn project image](images/Endogyn_banner_bg_1200px.jpg)
+
 An explorative Data Science and AI capstone project, where ovarian endometriosis and ovarian cancer are explored using machine learning. 
 
 ## Background
 
-Endometriosis is an understudied and painful condition impacting 10% of women globally [1]. Research suggests an average of 8 years until diagnosis due to lack of disease knowledge [2]. It is defined by the uterine tissue growth outside of the uterus. But additionally, those affected are at a higher risk of gynecologic cancers as endometriosis shares many of the cancer's characteristics. 
+**Endometriosis** is an understudied and painful condition impacting 10% of women globally [1]. 
+* Research suggests an average of 8 years until diagnosis due to lack of disease knowledge [2]. It is defined by the uterine tissue growth outside of the uterus. Additionally, those affected by endometriosis are at a higher risk of gynecologic cancers as endometriosis shares many of the cancer's characteristics. 
 
-Ovarian cancer is the most common endomteriosis-associated cancers [3], as well as the most lethal across gynecologic cancers. Many endometriosis hallmarks are shared with cancer hallmarks: angiogenesis, proliferation, evading the immune system, adhering, metastsis (according to one of the two pathogensis hypotheses) [4]. Which begs the question of whether there are conserved, as well as diverging, molecular programs at play. 
+**Ovarian cancer** is the most common endometriosis-associated cancers [3], as well as the most lethal across gynecologic cancers. Many endometriosis hallmarks are shared with cancer hallmarks: angiogenesis, proliferation, evading the immune system, adhering, metastsis (according to one of the two pathogensis hypotheses) [4]. This raises the question of whether there are conserved, as well as diverging, molecular programs at play. 
 ## Data
 | Condition| Dataset | Size | Patients | Cell Count| Cell Count post ETL |
 | -------- | ------- | ------- | ------- | ------- | ------- |
@@ -17,20 +20,21 @@ Ovarian cancer is the most common endomteriosis-associated cancers [3], as well 
 ### Data Allocation and Preprocessing
 ### Data Integration
 ### Machine Learning 
+
 ## Requirements
 * pyenv with Python: 3.11.3
-* Further package requirements are included as .txt files. To set up the virtual environment:
+* Further package requirements are included as .txt files. To set up the virtual environment for the ETL stage:
 ### **`macOS`** type the following commands : 
 - Install the virtual environment and the required packages by following commands:
 
     ```BASH
     pyenv local 3.11.3
-    python3 -m venv .venv
+    python3 -m venv .venv_ETL
     source .venv/bin/activate
     pip install --upgrade pip
-    pip install -r requirements.txt #choose the correct .txt file
+    pip install -r requirements_ETL.txt #choose the correct .txt file
     ```
-### **`WindowsOS`** type the following commands :
+### **`Windows`** type the following commands :
 
 - Install the virtual environment and the required packages by following commands.
 
@@ -38,20 +42,20 @@ Ovarian cancer is the most common endomteriosis-associated cancers [3], as well 
 
     ```PowerShell
     pyenv local 3.11.3
-    python -m venv .venv
+    python -m venv .venv_ETL
     .venv\Scripts\Activate.ps1
     python -m pip install --upgrade pip
-    pip install -r requirements.txt #choose the correct .txt file
+    pip install -r requirements_ETL.txt #choose the correct .txt file
     ```
 
     For `Git-bash` CLI :
   
     ```BASH
     pyenv local 3.11.3
-    python -m venv .venv
+    python -m venv .venv_ETL
     source .venv/Scripts/activate
     python -m pip install --upgrade pip
-    pip install -r requirements.txt #choose the correct .txt file
+    pip install -r requirements_ETL.txt #choose the correct .txt file
     ```
 
 ## References
