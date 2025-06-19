@@ -7,7 +7,7 @@ An explorative Data Science and AI capstone project, where ovarian endometriosis
 ## Background
 
 **Endometriosis** is an understudied and painful condition impacting 10% of women globally [1]. 
-* Research suggests an average of 8 years until diagnosis due to lack of disease knowledge [2]. It is defined by the uterine tissue growth outside of the uterus. Additionally, those affected by endometriosis are at a higher risk of gynecologic cancers as endometriosis shares many of the cancer's characteristics. 
+Research suggests an average of 8 years until diagnosis due to lack of disease knowledge [2]. It is defined by the uterine tissue growth outside of the uterus. Additionally, those affected by endometriosis are at a higher risk of gynecologic cancers as endometriosis shares many of the cancer's characteristics. 
 
 **Ovarian cancer** is the most common endometriosis-associated cancers [3], as well as the most lethal across gynecologic cancers. Many endometriosis hallmarks are shared with cancer hallmarks: angiogenesis, proliferation, evading the immune system, adhering, metastsis (according to one of the two pathogensis hypotheses) [4]. This raises the question of whether there are conserved, as well as diverging, molecular programs at play. 
 ## Data
