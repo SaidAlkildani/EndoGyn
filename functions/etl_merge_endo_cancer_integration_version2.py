@@ -253,7 +253,7 @@ norm_train = model.get_normalized_expression(
 latent_train = model.get_latent_representation()
 adata_train.obsm["X_scVI"] = latent_train
 
-# Setup model, fit, and normalise train dataset 
+# Setup model, fit, and normalise test dataset 
 scvi.model.SCVI.setup_anndata(adata_test, layer="counts", 
                               categorical_covariate_keys= ["sample", "dataset"], # choosing datasets as a covariate
                               continuous_covariate_keys= ["pct_counts_mt", "total_counts"])
@@ -263,7 +263,7 @@ if use_gpu == True:
     model.train(accelerator="gpu") 
 else: model.train() 
 
-# Get normalized counts for train set
+# Get normalized counts for test set
 norm_test = model.get_normalized_expression(
     adata_test,
     library_size=1e4, 
@@ -285,47 +285,10 @@ norm_test_df.to_parquet(os.path.join(processed_data_path, "scvi_normalized_test.
 adata_integrated = ad.concat(
     [adata_train, adata_test],
     axis=0,          # Concatenate along cells 
-    join="outer",    # Keep all genes only
+    join="outer",    # Keep all genes 
     merge="unique",  # Handle overlapping metadata uniquely
     fill_value=0     # Fill missing values wth zeros
 )
 
 # Save Anndata in case of visualisation ## cannot generally save since the latent space has different dimensions.
 ad.AnnData.write_h5ad(adata_integrated, filename=os.path.join(processed_data_path, "anndata_integrated.h5ad"), compression='gzip')
-
-
-"""
-df_X_with_obs = merged_adata.to_df().join(merged_adata.obs) # merge cell data with metadata
-
-df_X_with_obs['cell_label'] = df_X_with_obs.index
-
-df_X_with_obs.reset_index(inplace=True)
-df_X_with_obs.drop('index', axis=1, inplace=True)
-
-df_X_with_obs["target"] = (
-    df_X_with_obs["sample"]
-    .apply(lambda x: (x.split("_")[-1])[0]) # split "sample" column and get the last part containing Cancer1, EMS, N-5 Norm2, etc.... [0] gets the first letter C, E, N
-    .map({"C": "Cancer", "E": "EMS", "N": "Normal"})
-)
-
-set(df_X_with_obs.target)
-
-df_X_with_obs.to_parquet(os.path.join(processed_data_path, "df_X_with_obs.parquet"))
-
-columns_to_drop = [
-    "cell_label",
-    "sample",
-    "batch",
-    "n_genes",
-    "n_genes_by_counts",
-    "total_counts",
-    "total_counts_mt",
-    "pct_counts_mt",
-]
-
-df_X_with_target = df_X_with_obs.loc[
-        :, ~df_X_with_obs.columns.isin(columns_to_drop)
-        ].copy()
-
-df_X_with_target.to_parquet(os.path.join(processed_data_path, "df_X_with_target.parquet"))
-"""
