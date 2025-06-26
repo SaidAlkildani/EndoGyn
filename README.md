@@ -2,14 +2,26 @@
 
 ![Endogyn project image](images/Endogyn_banner_bg_1200px.jpg)
 
-An explorative Data Science and AI capstone project, where ovarian endometriosis and ovarian cancer are explored using machine learning. 
+An explorative Data Science and AI capstone project, where ovarian endometriosis and ovarian cancer are investigated using machine learning. 
+
+Said Alkildani, molecular biologist ([email](saidalkildani@gmail.com)).
+
+Andrew White, data analyst. 
+
 
 ## Background
 
 **Endometriosis** is an understudied and painful condition impacting 10% of women globally [1]. 
-Research suggests an average of 8 years until diagnosis due to lack of disease knowledge [2]. It is defined by the uterine tissue growth outside of the uterus. Additionally, those affected by endometriosis are at a higher risk of gynecologic cancers as endometriosis shares many of the cancer's characteristics. 
+Research suggests an average of 8 years until diagnosis due to a lack of understanding of the disease [2]. It is defined by uterine tissue growth outside of the uterus. Those affected by endometriosis are at a higher risk of gynecologic cancers.
 
-**Ovarian cancer** is the most common endometriosis-associated cancers [3], as well as the most lethal across gynecologic cancers. Many endometriosis hallmarks are shared with cancer hallmarks: angiogenesis, proliferation, evading the immune system, adhering, metastsis (according to one of the two pathogensis hypotheses) [4]. This raises the question of whether there are conserved, as well as diverging, molecular programs at play. 
+**Ovarian cancer** is the most common endometriosis-associated cancers [3], as well as the most lethal across gynecologic cancers. Many endometriosis hallmarks are shared with cancer hallmarks: angiogenesis, proliferation, evading the immune system, adhering, metastsis (according to one of the two pathogensis hypotheses) [4].
+
+The hallmarks of endometriosis seem to be shared with those of cancer. Our project aims to answer the question of whether machine learning can help us infer blood-detectable proteins (using scRNA-seq data) that are either conserved or divergent across both conditions. 
+
+This is a capstone project of the Data Science and AI bootcamp with neue fische GmbH. The idea here is that a stakeholder in bio-tech has asked for a blood-detectable protein panel that can distinguish between healthy patients and patients with either endometriosis or ovarian cancer. The idea here is that a blood test can be conducted preliminary to the highly invasive and painful diagnostic measures (intravaginal imaging, biopsies, etc.). 
+
+Click [here](https://docs.google.com/presentation/d/1q4SzzaCRZfP-yF9CCFzsgsDom7Pc5h6qfQB2yhAlQn4/edit?usp=drive_link) to access the project presentation.
+
 ## Data
 | Condition| Dataset | Size | Patients | Cell Count| Cell Count post ETL |
 | -------- | ------- | ------- | ------- | ------- | ------- |
@@ -18,8 +30,12 @@ Research suggests an average of 8 years until diagnosis due to lack of disease k
 
 ## Methodologies
 ### Data Allocation and Preprocessing
+Single-cell RNA sequencing data was allocated from relevant publications. Both the ovarian cancer and the endometriosis datasets were retreived from the Gene Expression Ominobus database. The data required reformating and cleaning. 
 ### Data Integration
+In order to regress out technical variations coming from the datasets and the samples, scVI was used. We chose scVI as it can batch correct the gene expression matrices. Other common integrative tools work primarily on the latent dimensional spaces. 
+
 ### Machine Learning 
+Due to the short time of the project (a month), we were only able to train an eXtreme Gradient Boosting (XGB) model. Hyperparameters are available in the ML notebook. 
 
 ## Requirements
 * pyenv with Python: 3.11.3
